@@ -12,7 +12,21 @@ class DBController(object):
     def __del__(self) -> None:
         self.CUR.close
         self.CONN.close
-    
+
+    def isInitializedDB(self) -> bool:
+        self.CUR.execute("select name from sqlite_master where type='table'")
+        data = self.CUR.fetchall()
+        if len(data) <= 1:
+            return False
+        else:
+            return True
+
+    def initInstall(self) -> None:
+        fp = "./sql/init.sql"
+        with open(fp, "r") as f:
+            initsql = f.read()
+            self.CUR.executescript(initsql)
+
     def getAllHosts(self) -> list:
         sql = """
             select hosts.id, substr(MAX(cert_state.id) || cert_state.state, 2), hosts.name, hosts.url, 

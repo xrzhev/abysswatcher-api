@@ -2,9 +2,21 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from PageHelper import PageHelper
 from models.HostsModel import *
+from DBController import DBController
 
 app = FastAPI()
 site = PageHelper()
+db = DBController()
+
+#
+# DB初期インストール処理
+#
+if not db.isInitializedDB():
+    print("DO INITIALIZE DB...")
+    db.initInstall()
+    db.commit()
+del db
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -18,6 +30,7 @@ app.add_middleware(
 @app.get("/")
 async def root():
     return {"message":"hi!"}
+
 
 @app.get("/get")
 async def getHosts(position: int=None, range: int=None):
