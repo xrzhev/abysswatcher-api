@@ -55,23 +55,6 @@ class DBController(object):
         data = self.CUR.fetchall()
         return data
 
-
-    def searchHosts(self, searchword: str):
-        sql = """
-            select hosts.id, substr(MAX(cert_state.id) || cert_state.state, 2), hosts.name, hosts.url, 
-            '[' || group_concat('{ "port": ' || ports.port || ', "begin_date": "' || certs.begin_date || '", "expire_date": "' || certs.expire_date || '", "issuer": "' || certs.issuer || '"}') || ']'
-            from hosts
-            left join ports ON hosts.id = ports.host_id
-            left join certs ON ports.id = certs.port_id
-			left join cert_state ON certs.cert_state = cert_state.id
-            WHERE hosts.name LIKE '%'||?||'%' OR hosts.url LIKE '%'||?||'%'
-            group by hosts.id
-            """
-        self.CUR.execute(sql, (searchword, searchword))
-        data = self.CUR.fetchall()
-        return data
-
-
     def setHosts(self, host: RegisterHost) -> None:
         name = host.name
         url  = host.url
@@ -87,7 +70,7 @@ class DBController(object):
         
         self.CUR.execute(host_sql, (name, url))
         self.CUR.executemany(port_sql, url_port)
-    
+
     def setCert(self, cert: RegisterCert):
         sql = """
             INSERT INTO certs(port_id, begin_date, expire_date, begin_unixtime, expire_unixtime, issuer, last_update, cert_state)
@@ -102,10 +85,6 @@ class DBController(object):
                 cert.updateCheckTime, cert.sslCertState, cert.url, cert.port)
 
         self.CUR.execute(sql, args)
-    
 
     def commit(self) ->None:
         self.CONN.commit()
-
-    def testdata(self, a:str, b:int):
-        pass
