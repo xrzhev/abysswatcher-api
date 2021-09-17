@@ -29,13 +29,12 @@ class DBController(object):
 
     def getAllHosts(self) -> list:
         sql = """
-            select hosts.id, substr(MAX(cert_state.id) || cert_state.state, 2), hosts.name, hosts.url, 
-            '[' || group_concat('{ "port": ' || ports.port || ', "begin_date": "' || certs.begin_date || '", "expire_date": "' || certs.expire_date || '", "issuer": "' || certs.issuer || '"}') || ']'
+            select hosts.id, cert_state.state, hosts.name, hosts.url,
+                ports.port, certs.begin_date, certs.expire_date, certs.issuer
             from hosts
             left join ports ON hosts.id = ports.host_id
             left join certs ON ports.id = certs.port_id
-			left join cert_state ON certs.cert_state = cert_state.id
-            group by hosts.id
+            left join cert_state ON certs.cert_state = cert_state.id
             """
 
         self.CUR.execute(sql)
@@ -44,13 +43,12 @@ class DBController(object):
     
     def getAnyHosts(self, position: int, range: int) -> list:
         sql = """
-            select hosts.id, substr(MAX(cert_state.id) || cert_state.state, 2), hosts.name, hosts.url, 
-            '[' || group_concat('{ "port": ' || ports.port || ', "begin_date": "' || certs.begin_date || '", "expire_date": "' || certs.expire_date || '", "issuer": "' || certs.issuer || '"}') || ']'
+            select hosts.id, cert_state.state, hosts.name, hosts.url,
+                ports.port, certs.begin_date, certs.expire_date, certs.issuer
             from hosts
             left join ports ON hosts.id = ports.host_id
             left join certs ON ports.id = certs.port_id
-			left join cert_state ON certs.cert_state = cert_state.id
-            group by hosts.id
+            left join cert_state ON certs.cert_state = cert_state.id
             LIMIT ?, ?
             """
         self.CUR.execute(sql, (position, range))

@@ -47,7 +47,7 @@ class PageHelper(object):
     def convertHostsList2Json(self, hosts: list) -> json:
         container_json = []
         for host in hosts:
-            data = {"id": host[0],"state":host[1], "name": host[2], "url": host[3], "certinfo": json.loads(host[4])}
+            data = {"id": host[0],"state":host[1], "name": host[2], "url": host[3], "port": host[4], "begin_date": host[5], "expire_date": host[6], "issuer": host[7]}
             container_json.append(data)
         return container_json 
     
