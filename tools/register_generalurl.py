@@ -9,7 +9,7 @@ for num, i in enumerate(data):
     try:
         payload = {"name": i, "url": f"https://{i}", "ports":[443]}
         print(payload)
-        r = requests.post("http://192.168.56.105:8000/set/hosts", data=json.dumps(payload))
+        r = requests.post("http://127.0.0.1:8000/set/hosts", data=json.dumps(payload))
         print(r.text)
     except:
         print("   req error...")
