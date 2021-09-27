@@ -40,6 +40,6 @@ async def getHosts(position: int=None, range: int=None):
         return site.getAllHostsList()
 
 
-@app.post("/set/hosts")
-async def setHosts(host: RegisterHost):
+@app.post("/set/host")
+async def setHost(host: RegisterHost):
     return site.registerHostData(host)
