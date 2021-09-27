@@ -37,13 +37,6 @@ class PageHelper(object):
         except Exception as e:
             return {"msg": "missed...", "detail": repr(e)}
         
-    
-    def searchHostsList(self, word: SearchHost):
-        db = DBController()
-        data = db.searchHosts(word.searchword)
-        return self.convertHostsList2Json(data)
-
-        
     def convertHostsList2Json(self, hosts: list) -> json:
         container_json = []
         for host in hosts:

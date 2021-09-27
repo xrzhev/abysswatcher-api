@@ -43,8 +43,3 @@ async def getHosts(position: int=None, range: int=None):
 @app.post("/set/hosts")
 async def setHosts(host: RegisterHost):
     return site.registerHostData(host)
-
-
-@app.post("/search")
-async def searchHosts(searchword: SearchHost):
-    return site.searchHostsList(searchword)

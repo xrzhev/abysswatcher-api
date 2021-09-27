@@ -5,6 +5,3 @@ class RegisterHost(BaseModel):
     name: str
     url:  HttpUrl
     ports: List[int]
-
-class SearchHost(BaseModel):
-    searchword: str
