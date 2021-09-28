@@ -1,7 +1,7 @@
 from pydantic import BaseModel, HttpUrl
 from typing import List
 
-class RegisterHost(BaseModel):
+class RegisterHostModel(BaseModel):
     name: str
     url:  HttpUrl
     ports: List[int]

@@ -21,14 +21,14 @@ class PageHelper(object):
         return self.convertHostsList2Json(db.getAnyHosts(begin, range))
         #return db.getAllHosts()
 
-    def registerHostData(self, host: RegisterHost) -> dict:
+    def registerHostData(self, host: RegisterHostModel) -> dict:
         try: 
             db = DBController()
             # register host
             db.setHosts(host)
             # register cert
             for port in host.ports:
-                cert_model = generateCertClass(url=host.url, port=port)
+                cert_model = GenerateCertModel(url=host.url, port=port)
                 cert = CertController(cert_model)
                 db.setCert(cert.getRegisterCertModel())
             
@@ -36,6 +36,25 @@ class PageHelper(object):
             return {"msg": "successful!"}
         except Exception as e:
             return {"msg": "missed...", "detail": repr(e)}
+        
+    def updateCert(self, cert_id: UpdateCertModel) -> None:
+        db = DBController()
+        url, port = db.getGenCertModelFromCertId(cert_id.cert_id)[0]
+        cert_model = GenerateCertModel(url=url, port=port)
+        cert = CertController(cert_model)
+        try:
+            db.updateCert(cert.getRegisterCertModel(), cert_id.cert_id)
+            db.commit()
+            return {"msg": "update successful: {}:{}".format(url,port)}
+        except Exception as e:
+            return {"msg": "missed...", "detail": repr(e)}
+        
+    def getCountRegistedCert(self):
+        db = DBController()
+        db.CUR.execute("SELECT COUNT(id) FROM certs")
+        data = db.CUR.fetchall()[0][0]
+        return data
+
         
     def convertHostsList2Json(self, hosts: list) -> json:
         container_json = []

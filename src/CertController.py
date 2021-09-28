@@ -5,7 +5,7 @@ import datetime
 from urllib.parse import urlparse
 
 class CertController(object):
-    def __init__(self, cert: generateCertClass) -> None:
+    def __init__(self, cert: GenerateCertModel) -> None:
         self.url = cert.url
         self.port = cert.port
         self.fmt= r"%b %d %H:%M:%S %Y %Z"
@@ -16,10 +16,10 @@ class CertController(object):
 
         host = urlparse(self.url).netloc
         context = ssl.create_default_context()
-        conn = context.wrap_socket(socket.socket(socket.AF_INET), server_hostname = host)
-        conn.settimeout(3.0)
-        conn.connect((host, port))
-        return conn.getpeercert()
+        with context.wrap_socket(socket.socket(socket.AF_INET), server_hostname = host) as conn:
+            conn.settimeout(3.0)
+            conn.connect((host, port))
+            return conn.getpeercert()
     
 
     def getSSLCertExpireDate(self) -> datetime.datetime:
@@ -55,8 +55,8 @@ class CertController(object):
         elif days_left < 30:
             return 2
 
-    def getRegisterCertModel(self) -> RegisterCert:
-        cert = RegisterCert(
+    def getRegisterCertModel(self) -> RegisterCertModel:
+        cert = RegisterCertModel(
             url = self.url,
             port = self.port,
             sslCertExpireDate = self.getSSLCertExpireDate(),
@@ -64,6 +64,7 @@ class CertController(object):
             sslCertBeginDate = self.getSSLCertBeginDate(),
             sslCertBeginUnixTime = self.getSSLCertBeginUnixTime(),
             sslCertState = self.getSSLCertState(),
-            sslCertIssuer = self.getSSLCertIssure()
+            sslCertIssuer = self.getSSLCertIssure(),
+            updateCheckTime = datetime.datetime.now()
         )
         return cert

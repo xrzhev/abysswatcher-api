@@ -55,7 +55,7 @@ class DBController(object):
         data = self.CUR.fetchall()
         return data
 
-    def setHosts(self, host: RegisterHost) -> None:
+    def setHosts(self, host: RegisterHostModel) -> None:
         name = host.name
         url  = host.url
         # [(443, "https://hoge.com"), (443, "https://huga.com"), ...]
@@ -71,7 +71,7 @@ class DBController(object):
         self.CUR.execute(host_sql, (name, url))
         self.CUR.executemany(port_sql, url_port)
 
-    def setCert(self, cert: RegisterCert):
+    def setCert(self, cert: RegisterCertModel):
         sql = """
             INSERT INTO certs(port_id, begin_date, expire_date, begin_unixtime, expire_unixtime, issuer, last_update, cert_state)
             SELECT ports.id, ?, ?, ?, ?, ?, ?, ? 
@@ -85,6 +85,37 @@ class DBController(object):
                 cert.updateCheckTime, cert.sslCertState, cert.url, cert.port)
 
         self.CUR.execute(sql, args)
+    
+    def getGenCertModelFromCertId(self, cert_id: int):
+        sel_sql = """
+               SELECT hosts.url, ports.port
+               FROM certs
+               LEFT JOIN ports ON certs.port_id = ports.id
+               LEFT JOIN hosts ON hosts.id = ports.host_id
+               WHERE certs.id = ?
+              """
+        self.CUR.execute(sel_sql, (cert_id,))
+        data = self.CUR.fetchall()
+        return data
+    
+    def updateCert(self, cert: RegisterCertModel, cert_id: int):
+        sql = """
+            UPDATE certs
+            SET begin_date = ?,
+                expire_date = ?, 
+                begin_unixtime = ?, 
+                expire_unixtime = ?,
+                issuer = ?, 
+                last_update = ?, 
+                cert_state = ?
+            WHERE id = ?
+        """
+        args = (cert.sslCertBeginDate, cert.sslCertExpireDate, \
+                cert.sslCertBeginUnixTime, cert.sslCertExpireUnixTime, cert.sslCertIssuer, \
+                cert.updateCheckTime, cert.sslCertState, cert_id)
+
+        self.CUR.execute(sql, args)
+
 
     def commit(self) ->None:
         self.CONN.commit()

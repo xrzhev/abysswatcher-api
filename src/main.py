@@ -1,8 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from PageHelper import PageHelper
+from models.CertsModel import *
 from models.HostsModel import *
 from DBController import DBController
+from concurrent import futures
 
 app = FastAPI()
 site = PageHelper()
@@ -41,5 +43,27 @@ async def getHosts(position: int=None, range: int=None):
 
 
 @app.post("/set/host")
-async def setHost(host: RegisterHost):
+async def setHost(host: RegisterHostModel):
     return site.registerHostData(host)
+
+
+@app.post("/update/cert")
+async def updateHost(cert_id: UpdateCertModel):
+    return site.updateCert(cert_id)
+
+
+@app.post("/update/allcert")
+async def updateAllHost():
+    thread_array = []
+    cert_len = int(site.getCountRegistedCert()) + 1
+    with futures.ThreadPoolExecutor(max_workers=16) as exec:
+        for i in range(1, cert_len):
+            cert_id = UpdateCertModel(cert_id = i)
+            future = exec.submit(site.updateCert, cert_id)
+            thread_array.append(future)
+
+        for future in thread_array:
+            print("DONE {}".format(future.result()))
+        
+        exec.shutdown()
+    

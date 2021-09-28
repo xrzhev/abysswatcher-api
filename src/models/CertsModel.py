@@ -3,12 +3,12 @@ from pydantic import BaseModel, HttpUrl
 from typing import List
 import datetime
 
-class generateCertClass(BaseModel):
+class GenerateCertModel(BaseModel):
     url: HttpUrl
     port: int
 
 
-class RegisterCert(BaseModel):
+class RegisterCertModel(BaseModel):
     url:  HttpUrl
     port: int
     sslCertBeginDate: datetime.datetime
@@ -17,4 +17,8 @@ class RegisterCert(BaseModel):
     sslCertExpireUnixTime: int
     sslCertIssuer: str
     sslCertState: int
-    updateCheckTime: datetime.datetime = datetime.datetime.now()
+    updateCheckTime: datetime.datetime
+
+
+class UpdateCertModel(BaseModel):
+    cert_id: int
