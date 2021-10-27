@@ -37,17 +37,18 @@ class PageHelper(object):
         except Exception as e:
             return {"msg": "missed...", "detail": repr(e)}
         
+
     def updateCert(self, cert_id: UpdateCertModel) -> None:
         db = DBController()
         url, port = db.getGenCertModelFromCertId(cert_id.cert_id)[0]
-        cert_model = GenerateCertModel(url=url, port=port)
-        cert = CertController(cert_model)
         try:
+            cert_model = GenerateCertModel(url=url, port=port)
+            cert = CertController(cert_model)
             db.updateCert(cert.getRegisterCertModel(), cert_id.cert_id)
             db.commit()
-            return {"msg": "update successful: {}:{}".format(url,port)}
+            return {"msg": "update successful", "addr": f"{url}:{port}"}
         except Exception as e:
-            return {"msg": "missed...", "detail": repr(e)}
+            return {"msg": "missed...", "addr": f"{url}:{port}", "error": repr(e)}
         
     def getCountRegistedCert(self):
         db = DBController()

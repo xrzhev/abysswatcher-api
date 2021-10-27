@@ -55,15 +55,20 @@ async def updateHost(cert_id: UpdateCertModel):
 @app.post("/update/allcert")
 async def updateAllHost():
     thread_array = []
+    error_count = 0
+    error_id = []
     cert_len = int(site.getCountRegistedCert()) + 1
-    with futures.ThreadPoolExecutor(max_workers=16) as exec:
+    with futures.ThreadPoolExecutor(max_workers=32) as executor:
         for i in range(1, cert_len):
             cert_id = UpdateCertModel(cert_id = i)
-            future = exec.submit(site.updateCert, cert_id)
+            future = executor.submit(site.updateCert, cert_id)
             thread_array.append(future)
 
         for future in thread_array:
-            print("DONE {}".format(future.result()))
-        
-        exec.shutdown()
-    
+            ret = future.result()
+            print(ret)
+            if ret["msg"] == "missed...":
+                error_count += 1
+                error_id.append(ret["addr"])
+
+    return {"msg": "Update Done!", "error_count": f"{error_count}", "error_id":error_id }
