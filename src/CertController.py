@@ -17,7 +17,7 @@ class CertController(object):
         host = urlparse(self.url).netloc
         context = ssl.create_default_context()
         with context.wrap_socket(socket.socket(socket.AF_INET), server_hostname = host) as conn:
-            conn.settimeout(3.0)
+            conn.settimeout(5)
             conn.connect((host, port))
             return conn.getpeercert()
     
