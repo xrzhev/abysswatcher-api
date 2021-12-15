@@ -65,6 +65,6 @@ class CertController(object):
             sslCertBeginUnixTime = self.getSSLCertBeginUnixTime(),
             sslCertState = self.getSSLCertState(),
             sslCertIssuer = self.getSSLCertIssure(),
-            updateCheckTime = datetime.datetime.now()
+            updateCheckTime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )
         return cert
