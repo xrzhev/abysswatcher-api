@@ -117,5 +117,31 @@ class DBController(object):
         self.CUR.execute(sql, args)
 
 
+    def getCertStateDanger(self):
+        sql = """
+        SELECT hosts.name, hosts.url, expire_date, last_update FROM certs
+        LEFT JOIN hosts ON certs.port_id = hosts.id
+        WHERE cert_state = 3
+        ORDER BY expire_date ASC;
+        """
+
+        self.CUR.execute(sql)
+        data = self.CUR.fetchall()
+        return data
+
+
+    def getCertStateExpired(self):
+        sql = """
+        SELECT hosts.name, hosts.url, expire_date, last_update FROM certs
+        LEFT JOIN hosts ON certs.port_id = hosts.id
+        WHERE cert_state = 4
+        ORDER BY expire_date ASC;
+        """
+
+        self.CUR.execute(sql)
+        data = self.CUR.fetchall()
+        return data
+
+
     def commit(self) ->None:
         self.CONN.commit()

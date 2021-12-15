@@ -64,3 +64,10 @@ class PageHelper(object):
             container_json.append(data)
         return container_json 
     
+
+    def getSlackNoticeData(self):
+        db = DBController()
+        danger_hosts = db.getCertStateDanger()
+        expired_hosts = db.getCertStateExpired()
+
+        return danger_hosts, expired_hosts

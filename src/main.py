@@ -5,10 +5,12 @@ from models.CertsModel import *
 from models.HostsModel import *
 from DBController import DBController
 from concurrent import futures
+from Notice import SlackNotice
 
 app = FastAPI()
 site = PageHelper()
 db = DBController()
+slack = SlackNotice()
 
 #
 # DB初期インストール処理
@@ -22,7 +24,7 @@ del db
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8080", "http://192.168.56.105:8080"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -72,3 +74,28 @@ async def updateAllHost():
                 error_id.append(ret["addr"])
 
     return {"msg": "Update Done!", "error_count": f"{error_count}", "error_id":error_id }
+
+
+@app.get("/notice/slack")
+async def SlackNotice():
+    danger_notice_strings = ":eyes:*30日以内に失効するSSL証明書*\n"
+    expired_notice_strings = ":fire:*失効済みSSL証明書*\n"
+    
+    danger_hosts, expired_hosts = site.getSlackNoticeData()
+
+    if len(danger_hosts) == 0:
+        danger_notice_strings += "• なし\n"
+    else:
+        for hosts in danger_hosts:
+            print(hosts)
+            danger_notice_strings += f"• {hosts[1]}\n\t• 失効日: {hosts[2]}\n\t• 最終確認日: {hosts[3]}\n"
+
+    if len(expired_hosts) == 0:
+        expired_notice_strings += "• なし\n"
+    else:
+        for hosts in expired_hosts:
+            print(hosts)
+            expired_notice_strings += f"• {hosts[1]}\n\t• 失効日: {hosts[2]}\n\t• 最終確認日: {hosts[3]}\n"
+    
+    post = slack.post(danger_notice_strings + "\n\n" + expired_notice_strings)
+    return post
