@@ -14,6 +14,5 @@ class SlackNotice:
         try:
             req = requests.post(url, headers=headers, data=json.dumps({"text":payload}))
             return {"msg":"success!"}
-            print(req.text)
         except:
             return {"msg":"error!"}
