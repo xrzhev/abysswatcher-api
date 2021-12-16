@@ -87,14 +87,12 @@ async def SlackNotice():
         danger_notice_strings += "• なし\n"
     else:
         for hosts in danger_hosts:
-            print(hosts)
             danger_notice_strings += f"• {hosts[1]}\n\t• 失効日: {hosts[2]}\n\t• 最終確認日: {hosts[3]}\n"
 
     if len(expired_hosts) == 0:
         expired_notice_strings += "• なし\n"
     else:
         for hosts in expired_hosts:
-            print(hosts)
             expired_notice_strings += f"• {hosts[1]}\n\t• 失効日: {hosts[2]}\n\t• 最終確認日: {hosts[3]}\n"
     
     post = slack.post(danger_notice_strings + "\n\n" + expired_notice_strings)
