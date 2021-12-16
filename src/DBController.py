@@ -5,7 +5,7 @@ import sqlite3
 class DBController(object):
 
     def __init__(self) -> None:
-        self.DBFILE = "./abysswatcher.sqlite3"
+        self.DBFILE = "./db/abysswatcher.sqlite3"
         self.CONN = sqlite3.connect(self.DBFILE)
         self.CUR  = self.CONN.cursor()
     
