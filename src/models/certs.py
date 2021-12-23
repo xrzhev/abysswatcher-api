@@ -1,7 +1,5 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
-from sqlalchemy.orm import relationship
 
-from models import hosts
 from db import Base
 
 
@@ -9,7 +7,7 @@ class Cert(Base):
     __tablename__ = "certs"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    host_id = Column(Integer, ForeignKey("hosts.id"))
+    domain = Column(String(1024), unique=True)
     port = Column(Integer)
     begin_time = Column(String(256))
     expire_time = Column(String(256))
@@ -19,4 +17,7 @@ class Cert(Base):
     cert_state = Column(String(64))
     update_check_time = Column(String(256))
 
-    hosts = relationship("Host", back_populates="certs")
+    def update(self, property_dict: dict):
+        for key, value in property_dict.items():
+            if key in self.__dict__:
+                setattr(self, key, value)

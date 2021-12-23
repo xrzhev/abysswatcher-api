@@ -11,13 +11,12 @@ from sqlalchemy.ext.asyncio.session import async_session
 
 import models.certs as cert_model
 import schemas.certs as cert_schema
-import schemas.hosts as host_schema
 
 
-async def create_cert(db: AsyncSession, cert_body: cert_schema.CertCreate, host: host_schema.Host) -> cert_model.Cert:
-    cert_controller = CertController(cert_body, host)
-    cert = await cert_controller.getCertModel()
-    print(vars(cert))
+async def create_cert(db: AsyncSession, cert_body: cert_schema.CertCreate) -> cert_model.Cert:
+    cert_controller = CertController(cert_body)
+    cert_data = await cert_controller.getCertData()
+    cert = cert_model.Cert(**cert_data)
 
     db.add(cert)
     await db.commit()
@@ -31,7 +30,7 @@ async def get_all_certs(db: AsyncSession) -> List[Tuple[int, str]]:
     # Removal tuple 
     result_array = list(map(lambda x: x[0], result.all()))
     return result_array
-    
+
 
 async def get_cert(db: AsyncSession, cert_id: int) -> Tuple[int, str]:
     q = select(cert_model.Cert).filter(cert_model.Cert.id == cert_id)
@@ -41,13 +40,16 @@ async def get_cert(db: AsyncSession, cert_id: int) -> Tuple[int, str]:
     return filterd_cert
 
 
-async def update_cert(db: AsyncSession, origin_cert: cert_model.Cert, update_cert: cert_schema.CertCreate) -> cert_model.Cert:
-    origin_cert.domain = update_cert.domain
+async def expiry_check_cert(db: AsyncSession, origin_cert: cert_model.Cert) -> cert_model.Cert:
+    schema = cert_schema.CertCreate(domain=origin_cert.domain, port=origin_cert.port)
+    cert_controller = CertController(schema)
+    renew_cert_data = await cert_controller.getCertData()
+    origin_cert.update(renew_cert_data) 
     db.add(origin_cert)
     await db.commit()
     await db.refresh(origin_cert)
     return origin_cert
-    
+
 
 async def delete_cert(db: async_session, origin_cert: cert_model.Cert) -> None:
     await db.delete(origin_cert)
@@ -56,15 +58,15 @@ async def delete_cert(db: async_session, origin_cert: cert_model.Cert) -> None:
 
 
 class CertController():
-    def __init__(self, cert: cert_schema.CertCreate, host: host_schema.Host) -> None:
-        self.domain = host.domain
-        self.host_id = host.id
+
+    def __init__(self, cert: cert_schema.CertCreate) -> None:
+        self.domain = cert.domain
         self.port = cert.port
         self.fmt= r"%b %d %H:%M:%S %Y %Z"
-        self.ssl_info = self.__getSSLCertInfo()
+        self.ssl_info = None
     
 
-    def __getSSLCertInfo(self) -> dict:
+    async def __getSSLCertInfo(self) -> dict:
         port = self.port
         host = self.domain
         context = ssl.create_default_context()
@@ -77,18 +79,23 @@ class CertController():
     def getSSLCertBeginTime(self) -> datetime.datetime:
         return datetime.datetime.strptime(self.ssl_info["notBefore"], self.fmt)
 
+
     def getSSLCertExpireTime(self) -> datetime.datetime:
         return datetime.datetime.strptime(self.ssl_info["notAfter"], self.fmt)
+
 
     def getSSLCertBeginUnixTime(self) -> datetime.datetime:
         return int(datetime.datetime.strptime(self.ssl_info["notBefore"], self.fmt).timestamp())
 
+
     def getSSLCertExpireUnixTime(self) -> datetime.datetime:
         return int(datetime.datetime.strptime(self.ssl_info["notAfter"], self.fmt).timestamp())
+
 
     def getSSLCertIssuer(self) -> str:
         return self.ssl_info["issuer"][1][0][1]
 
+ 
     def getSSLCertState(self) -> str:
         nowtime = datetime.datetime.now()
         expire_date = self.getSSLCertExpireTime()
@@ -107,16 +114,18 @@ class CertController():
         elif days_left < 30:
             return "Warning"
 
-    async def getCertModel(self) -> cert_model.Cert:
-        cert = cert_model.Cert(
-            host_id = self.host_id,
-            port = self.port,
-            begin_time = self.getSSLCertBeginTime(),
-            expire_time = self.getSSLCertExpireTime(),
-            begin_unixtime = self.getSSLCertBeginUnixTime(),
-            expire_unixtime = self.getSSLCertExpireUnixTime(),
-            cert_state = self.getSSLCertState(),
-            issuer = self.getSSLCertIssuer(),
-            update_check_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        )
+
+    async def getCertData(self) -> dict:
+        self.ssl_info = await self.__getSSLCertInfo()
+        cert = {
+            "domain" : self.domain,
+            "port" : self.port,
+            "begin_time" : self.getSSLCertBeginTime(),
+            "expire_time" : self.getSSLCertExpireTime(),
+            "begin_unixtime" : self.getSSLCertBeginUnixTime(),
+            "expire_unixtime" : self.getSSLCertExpireUnixTime(),
+            "cert_state" : self.getSSLCertState(),
+            "issuer" : self.getSSLCertIssuer(),
+            "update_check_time" : datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
         return cert

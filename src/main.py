@@ -1,29 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-#from PageHelper import PageHelper
-#from models.CertsModel import *
-#from models.HostsModel import *
-#from DBController import DBController
 #from concurrent import futures
-#from Notice import SlackNotice
 
+from routers import certs, notice
 
-from routers import hosts, certs, notice
 
 app = FastAPI()
-#site = PageHelper()
-#db = DBController()
-#slack = SlackNotice()
-
-#
-# DB初期インストール処理
-#
-#if not db.isInitializedDB():
-#    print("DO INITIALIZE DB...")
-#    db.initInstall()
-#    db.commit()
-#del db
-
 
 app.add_middleware(
     CORSMiddleware,
@@ -103,6 +85,6 @@ app.add_middleware(
 #
 
 
-app.include_router(hosts.router)
+#app.include_router(hosts.router)
 app.include_router(certs.router)
 app.include_router(notice.router)
