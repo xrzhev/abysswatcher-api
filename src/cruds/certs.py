@@ -10,7 +10,6 @@ import models.certs as cert_model
 import schemas.certs as cert_schema
 
 
-
 async def create_cert(db: AsyncSession, cert_body: cert_schema.CertCreate) -> cert_model.Cert:
     cert_controller = CertController(cert_body)
     cert_data = await cert_controller.getCertData()
@@ -53,34 +52,62 @@ async def delete_cert(db: AsyncSession, origin_cert: cert_model.Cert) -> None:
     await db.commit()
 
 
-async def expiry_check_cert(db: AsyncSession, origin_cert: cert_model.Cert) -> cert_model.Cert:
+async def expiry_check_cert(db: AsyncSession, origin_cert: cert_model.Cert) -> cert_schema.CertExpiryCheckResponse:
     schema = cert_schema.CertCreate(domain=origin_cert.domain, port=origin_cert.port)
-    cert_controller = CertController(schema)
-    renew_cert_data = await cert_controller.getCertData()
-    origin_cert.update(renew_cert_data) 
-    db.add(origin_cert)
-    await db.commit()
-    await db.refresh(origin_cert)
-    return origin_cert
 
-
-async def expiry_check_all_certs(db: AsyncSession) -> List[cert_model.Cert]:
-
-    async def task_runner(db: AsyncSession, origin_cert: cert_model.Cert, cert_schema: cert_schema.CertCreate):
-        cert_controller = CertController(cert_schema)
+    try:
+        cert_controller = CertController(schema)
         renew_cert_data = await cert_controller.getCertData()
-        origin_cert.update(renew_cert_data)
+        origin_cert.update(renew_cert_data) 
         db.add(origin_cert)
-        return renew_cert_data
+        await db.commit()
+        await db.refresh(origin_cert)
+        check_result = True
+        check_message = "Check Successful"
+    except Exception as err:
+        check_result = False
+        print(err)
+        check_message = str(err)
+    
+    return cert_schema.CertExpiryCheckResponse(
+        id = origin_cert.id,
+        result = check_result,
+        domain = origin_cert.domain,
+        port = origin_cert.port,
+        message = check_message
+    )
+
+
+async def expiry_check_all_certs(db: AsyncSession) -> cert_schema.AllCertExpiryCheckResponse:
+
+    async def task_runner(db: AsyncSession, origin_cert: cert_model.Cert, schema: cert_schema.CertCreate):
+        try:
+            cert_controller = CertController(schema)
+            renew_cert_data = await cert_controller.getCertData()
+            origin_cert.update(renew_cert_data)
+            db.add(origin_cert)
+        except Exception as err:
+            print(f"Something Err: {origin_cert.domain}")
+            print(type(err))
+            print(str(err))
+            error_schema = cert_schema.CertExpiryCheckResponse(
+                id = origin_cert.id,
+                result = False,
+                domain = origin_cert.domain,
+                port = origin_cert.port,
+                message = str(err)
+            )
+            return error_list.append(error_schema)
 
     task_list = []
+    error_list = []
     certs = await get_all_certs(db)
     for cert in certs:
         schema = cert_schema.CertCreate(domain=cert.domain, port=cert.port)
         task_list.append(task_runner(db, cert, schema))
-    return_array = await asyncio.gather(*task_list)
-    print(return_array)
+    await asyncio.gather(*task_list)
     await db.commit()
+    return cert_schema.AllCertExpiryCheckResponse(cert_size=len(certs), error=error_list)
 
 
 

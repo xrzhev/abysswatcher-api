@@ -34,13 +34,13 @@ async def update_cert(cert_id: int, cert_body: cert_schema.CertCreate, db: Async
     return await cert_crud.update_cert(db, origin_cert, cert_body)
 
 
-@router.post("/cert/check/{cert_id}", response_model=cert_schema.CertUpdateResponse)
+@router.post("/cert/check/{cert_id}", response_model=cert_schema.CertExpiryCheckResponse)
 async def expiry_check_cert(cert_id: int, db: AsyncSession = Depends(get_db)):
     origin_cert = await cert_crud.get_cert(db, cert_id)
     return await cert_crud.expiry_check_cert(db, origin_cert)
 
 
-@router.post("/certs/check", response_model=List[cert_schema.CertUpdateResponse])
+@router.post("/certs/check", response_model=cert_schema.AllCertExpiryCheckResponse)
 async def bulk_expiry_check_cert(db: AsyncSession = Depends(get_db)):
     return await cert_crud.expiry_check_all_certs(db)
 

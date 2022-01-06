@@ -1,3 +1,4 @@
+from typing import Optional, List
 from pydantic import BaseModel, Field
 
 
@@ -43,6 +44,18 @@ class CertUpdateResponse(BaseModel):
     expire_time: str = Field(None, example="2038-01-19 03:14:07" , description="Expire SSLCert time")
     update_check_time: str = Field(None, example="2038-01-19 00:00:00", description="Cert Last Check Time")
 
-
     class Config:
         orm_mode = True
+
+
+class CertExpiryCheckResponse(BaseModel):
+    id: int
+    result: bool = Field(None, example="True", description="Cert Check Result")
+    domain: str = Field(None, example="www.example.com", description="Domain Name")
+    port: int = Field(None, example=443, description="Port Number")
+    message: Optional[str] = Field(None, example="[Errno 2] No such file or directory: 'not_exist_file'", description="Reason for Exception")
+
+
+class AllCertExpiryCheckResponse(BaseModel):
+    cert_size: int = Field(None, example="777", description="Checked number of cert")
+    error: Optional[List[CertExpiryCheckResponse]]

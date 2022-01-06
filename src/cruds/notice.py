@@ -1,5 +1,3 @@
-from typing import List
-import asyncio
 import aiohttp
 
 from sqlalchemy import select, or_
@@ -7,7 +5,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.engine import Result
 
 import models.certs as cert_model
-#import schemas.notice as notice_schema
 
 
 async def do_notice(db: AsyncSession):
@@ -26,43 +23,27 @@ async def do_notice(db: AsyncSession):
                 danger_list.append(result_dict)
         return danger_list, expired_list
     
-
     # SlackApp webhook URL
     url = None
     danger_notice_strings = ":eyes:*30日以内に失効するSSL証明書*\n"
     expired_notice_strings = ":fire:*失効済みSSL証明書*\n"
-    
+  
     danger_hosts, expired_hosts = await get_notice_data(db)
 
     if len(danger_hosts) == 0:
         danger_notice_strings += "• なし\n"
     else:
         for host in danger_hosts:
-            danger_notice_strings += f"• {host['domain']}:{host['port']}\n\t• 失効日: {host['expire_time']}\n\t• 最終確認日: {host['update_check_time']}\n"
+            danger_notice_strings += f"• https://{host['domain']}:{host['port']}\n\t• 失効日: {host['expire_time']}\n\t• 最終確認日: {host['update_check_time']}\n"
 
     if len(expired_hosts) == 0:
         expired_notice_strings += "• なし\n"
     else:
         for host in expired_hosts:
-            expired_notice_strings += f"• {host['domain']}:{host['port']}\n\t• 失効日: {host['expire_time']}\n\t• 最終確認日: {host['update_check_time']}\n"
+            expired_notice_strings += f"• https://{host['domain']}:{host['port']}\n\t• 失効日: {host['expire_time']}\n\t• 最終確認日: {host['update_check_time']}\n"
     
     payload = {"text": danger_notice_strings + "\n\n" + expired_notice_strings}
 
     async with aiohttp.ClientSession() as session:
         async with session.post(url, json=payload) as resp:
             return resp.status
-
-
-
-
-   #get_notice_data(db)
-
-       #url = os.environ.get("ABYSSWATCHER_SLACK_ENDPOINT", None)
-       #headers = {"Content-Type": "application/json"}
-
-       #try:
-       #    req = requests.post(url, headers=headers, data=json.dumps({"text":payload}))
-       #    return {"msg":"success!"}
-       #except:
-       #    return {"msg":"error!"}
-
