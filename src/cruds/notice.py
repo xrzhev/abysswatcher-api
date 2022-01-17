@@ -25,7 +25,7 @@ async def do_notice(db: AsyncSession):
     
     # SlackApp webhook URL
     url = None
-    danger_notice_strings = ":eyes:*30日以内に失効するSSL証明書*\n"
+    danger_notice_strings = ":eyes:*7日以内に失効するSSL証明書*\n"
     expired_notice_strings = ":fire:*失効済みSSL証明書*\n"
   
     danger_hosts, expired_hosts = await get_notice_data(db)
