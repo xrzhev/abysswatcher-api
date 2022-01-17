@@ -1,4 +1,6 @@
+from fastapi import HTTPException
 import aiohttp
+import os
 
 from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,7 +26,7 @@ async def do_notice(db: AsyncSession):
         return danger_list, expired_list
     
     # SlackApp webhook URL
-    url = None
+    url = os.getenv("SLACK_WEBHOOK_URL")
     danger_notice_strings = ":eyes:*7日以内に失効するSSL証明書*\n"
     expired_notice_strings = ":fire:*失効済みSSL証明書*\n"
   
@@ -43,6 +45,9 @@ async def do_notice(db: AsyncSession):
             expired_notice_strings += f"• https://{host['domain']}:{host['port']}\n\t• 失効日: {host['expire_time']}\n\t• 最終確認日: {host['update_check_time']}\n"
     
     payload = {"text": danger_notice_strings + "\n\n" + expired_notice_strings}
+
+    if url == None:
+        raise HTTPException(status_code=404, detail="'SLACK_WEB_HOOK_URL' is not defined")
 
     async with aiohttp.ClientSession() as session:
         async with session.post(url, json=payload) as resp:

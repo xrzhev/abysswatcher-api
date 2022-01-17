@@ -1,4 +1,6 @@
 fastapi
+sqlalchemy
+aiohttp
 aiosqlite
 uvicorn
 requests

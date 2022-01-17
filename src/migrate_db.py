@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 
 from models.certs import Base as certs_base
 
-DB_URL = "sqlite:///db_file/abysswatcher.sqlite3"
+DB_URL = "sqlite:///./db_file/abysswatcher.sqlite3"
 engine = create_engine(DB_URL, echo=True)
 
 
