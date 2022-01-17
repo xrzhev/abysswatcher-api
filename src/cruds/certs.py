@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from typing import List
 import datetime
 import asyncio
@@ -5,6 +6,7 @@ import asyncio
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.engine import Result
+from sqlalchemy.exc import IntegrityError
 
 import models.certs as cert_model
 import schemas.certs as cert_schema
@@ -15,10 +17,14 @@ async def create_cert(db: AsyncSession, cert_body: cert_schema.CertCreate) -> ce
     cert_data = await cert_controller.getCertData()
     cert = cert_model.Cert(**cert_data)
 
-    db.add(cert)
-    await db.commit()
-    await db.refresh(cert)
-    return cert
+    try:
+        db.add(cert)
+        await db.commit()
+        await db.refresh(cert)
+    except IntegrityError:
+        raise HTTPException(status_code=409, detail="Already registred domain")
+    else: 
+        return cert
 
 
 async def get_all_certs(db: AsyncSession) -> List[cert_model.Cert]:
@@ -33,18 +39,26 @@ async def get_cert(db: AsyncSession, cert_id: int) -> cert_model.Cert:
     q = select(cert_model.Cert).filter(cert_model.Cert.id == cert_id)
     result: Result = await db.execute(q)
     # Removal tuple
-    filterd_cert = result.first()[0]
-    return filterd_cert
+    try:
+        filterd_cert = result.first()[0]
+    except TypeError:
+        raise HTTPException(status_code=404, detail="Not Registrated ID")
+    else:
+        return filterd_cert
 
 
 async def update_cert(db: AsyncSession, origin_cert: cert_model.Cert, update_schema: cert_schema.CertCreate) -> cert_model.Cert:
     cert_controller = CertController(update_schema)
     renew_cert_data = await cert_controller.getCertData()
     origin_cert.update(renew_cert_data)
-    db.add(origin_cert)
-    await db.commit()
-    await db.refresh(origin_cert)
-    return origin_cert
+    try:
+        db.add(origin_cert)
+        await db.commit()
+        await db.refresh(origin_cert)
+    except IntegrityError:
+        raise HTTPException(status_code=409, detail="Already registred domain")
+    else:
+        return origin_cert
 
 
 async def delete_cert(db: AsyncSession, origin_cert: cert_model.Cert) -> None:
@@ -145,7 +159,11 @@ class CertController():
 
 
     def getSSLCertIssuer(self) -> str:
-        return self.ssl_info["issuer"][1][0][1]
+        issuer_arr = []
+        issuer_dict = {}
+        [issuer_arr.append(tup[0]) for tup in self.ssl_info["issuer"]]
+        issuer_dict = dict(issuer_arr)
+        return issuer_dict["organizationName"]
 
  
     def getSSLCertState(self) -> str:
@@ -154,16 +172,16 @@ class CertController():
         delta = expire_date - nowtime
         days_left = delta.days
         # Fine
-        if days_left >= 30:
+        if days_left >= 15:
             return "Fine"
         # Expired
         elif days_left < 0:
             return "Expired"
         # Danger
-        elif days_left < 10:
+        elif days_left < 7:
             return "Danger"
         # Warning
-        elif days_left < 30:
+        elif days_left < 15:
             return "Warning"
 
 
